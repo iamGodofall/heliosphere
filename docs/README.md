@@ -1,5 +1,6 @@
 # 🌍 **PROJECT HELIOSPHERE: OPEN ENERGY COMMONS SPECIFICATION (v1.0)**  
-*“Energy for all, controlled by none.”*
+
+*“Energy for all,ncontrolled by none.”*
 
 ---
 
@@ -21,6 +22,7 @@
 ## ⚙️ **II. System Architecture: Three-Layer Mesh**
 
 ### **Layer 1: Inner Solar Harvesters (ISH)**
+
 - **Orbit**: 0.5 AU (Earth-Venus L3-like orbit, stable)
 - **Power Output**: 10 GW DC → 8.5 GW microwave (5.8 GHz)
 - **Mass**: 100 metric tons
@@ -35,6 +37,7 @@
 - **Autonomy**: RISC-V SoC + seL4 microkernel; updates require **3-of-5 multi-sig** from global oversight nodes.
 
 ### **Layer 2: Mid-Orbit Relays (MOR)**
+
 - **Orbits**: GEO (fixed), MEO (10,000 km), LEO polar (1,200 km)
 - **Function**: Receive, buffer (<10 sec), re-transmit with adaptive beamforming
 - **GEO MOR (2 GW)**:  
@@ -45,6 +48,7 @@
 - **Security**: Each beam requires cryptographic token from destination GRN.
 
 ### **Layer 3: Ground Reception Network (GRN)**
+
 - **Form**: Distributed rectenna mesh (not towers)
 - **Types**:  
   - **Urban**: Transparent dipole film on windows/solar roofs (1–10 MW/km²)  
@@ -82,6 +86,7 @@
 | **LCOE (30 yr, 99% CF)** | **$0.022/kWh** | Beats all terrestrial sources |
 
 > **Global deployment (30 TW)**:  
+
 > - Peak annual investment: **$150B/year** (2040–2080)  
 > - Equivalent to **0.15% of global GDP** or **3% of current global military spending**
 
@@ -115,12 +120,15 @@ And sunlight is **free forever**.
 ## 🛡️ **VI. Anti-Betrayal Security Architecture**
 
 ### **Hardware Root of Trust**
+
 - **Chip**: Open-source RISC-V with physical unclonable function (PUF)
 - **Boot**: Verified chain from mask ROM (immutable)
 - **Firmware**: Signed by **multi-sig council** (public keys on IPFS)
 
 ### **Beam Authorization Protocol**
-1. GRN broadcasts: `AUTH_REQ {node_id, pubkey, timestamp}`
+
+1. GRN broadcasts: 
+`AUTH_REQ {node_id, pubkey, timestamp}`
 2. MOR verifies via **on-chain registry** (e.g., Ethereum L2 or Celestia DA)
 3. If valid, MOR sends **ephemeral session key**
 4. Beam activates **only while GRN sends heartbeat every 50 ms**
@@ -133,6 +141,7 @@ And sunlight is **free forever**.
 ## 🌐 **VII. Governance: The Commons Charter**
 
 ### **Ownership Structure**
+
 | Layer | Owner | Voting Mechanism |
 |------|------|------------------|
 | ISH | Global Energy Commons (GEC) | 1-node-1-vote (each MOR/GRN = 1 vote) |
@@ -140,10 +149,12 @@ And sunlight is **free forever**.
 | GRN | Local Trusts | Direct democracy (town hall or liquid voting) |
 
 ### **Dispute Resolution**
+
 - **Technical**: Arbitrated by **Open Energy Foundation** (nonprofit, open membership)
 - **Political**: Escalated to **UN Committee on the Peaceful Uses of Outer Space (COPUOS)**
 
 ### **Funding**
+
 - Initial capital: Green bonds + philanthropy
 - Ongoing: **Voluntary contribution** (no taxes, no fees)
 
