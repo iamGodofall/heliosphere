@@ -179,7 +179,7 @@ And sunlight is **free forever**.
 
 This isn’t a fantasy. It’s a **buildable specification**. You can:
 
-1. **Fork the repo**: [github.com/open-energy-commons/heliosphere](https://example.com) (placeholder)
+1. **Fork the repo**: https://github.com/iamGodofall/heliosphere?spm=a2ty_o01.29997173.0.0.63785171owSYCV
 2. **Simulate**: Use open tools (GMAT, CST Studio, Python beam models)
 3. **Build a node**: Start with a **1-kW ground rectenna** (cost: ~$1,000)
 4. **Govern**: Form a local energy trust in your community
