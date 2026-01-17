@@ -1,9 +1,331 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta http-equiv="refresh" content="0; url=https://github.com/iamGodofall/heliosphere" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project Heliosphere: Open Energy Commons</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap');
+
+    :root {
+      --bg: #0a0a0f;
+      --bg-secondary: #1a1a2e;
+      --fg: #e0e0ff;
+      --accent: #00ff88;
+      --accent-secondary: #00d4ff;
+      --dim: #64748b;
+      --glow: rgba(0, 255, 136, 0.5);
+      --glow-secondary: rgba(0, 212, 255, 0.5);
+      --border: rgba(0, 255, 136, 0.3);
+      font-family: 'Rajdhani', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      line-height: 1.6;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+      font-family: 'Rajdhani', sans-serif;
+    }
+
+    /* Loading Screen */
+    #loading {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      transition: opacity 1s ease-out;
+    }
+
+    #loading.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .loading-text {
+      font-family: 'Orbitron', monospace;
+      font-size: 2rem;
+      color: var(--accent);
+      text-shadow: 0 0 20px var(--glow);
+      animation: pulse 2s infinite;
+    }
+
+    .loading-bar {
+      width: 200px;
+      height: 4px;
+      background: var(--bg-secondary);
+      margin-top: 20px;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .loading-progress {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent-secondary));
+      width: 0%;
+      animation: load 3s ease-out forwards;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    @keyframes load {
+      0% { width: 0%; }
+      100% { width: 100%; }
+    }
+
+    /* Main Content */
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+      opacity: 0;
+      animation: fadeIn 1s ease-out 3.5s forwards;
+    }
+
+    @keyframes fadeIn {
+      to { opacity: 1; }
+    }
+
+    h1 {
+      font-family: 'Orbitron', monospace;
+      font-size: 3rem;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(45deg, var(--accent), var(--accent-secondary), #ff0080);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      text-shadow: 0 0 30px var(--glow);
+      animation: glow 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes glow {
+      from { text-shadow: 0 0 30px var(--glow); }
+      to { text-shadow: 0 0 40px var(--glow), 0 0 50px var(--glow-secondary); }
+    }
+
+    .subtitle {
+      color: var(--accent-secondary);
+      font-size: 1.2rem;
+      margin-bottom: 2rem;
+      font-style: italic;
+      text-shadow: 0 0 10px var(--glow-secondary);
+    }
+
+    p {
+      font-size: 1.1rem;
+      margin-bottom: 2rem;
+    }
+
+    .principle {
+      background: linear-gradient(135deg, rgba(26, 26, 46, 0.8), rgba(10, 10, 15, 0.9));
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent);
+      padding: 1.5rem;
+      margin: 2rem 0;
+      border-radius: 8px;
+      box-shadow: 0 0 20px rgba(0, 255, 136, 0.1);
+      transition: all 0.3s ease;
+    }
+
+    .principle:hover {
+      box-shadow: 0 0 30px var(--glow);
+      transform: translateY(-2px);
+    }
+
+    .principle strong {
+      color: var(--accent);
+      font-size: 1.2rem;
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+      margin: 3rem 0;
+    }
+
+    .stat {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      padding: 1.5rem;
+      text-align: center;
+      border-radius: 8px;
+      box-shadow: 0 0 15px rgba(0, 255, 136, 0.1);
+      transition: all 0.3s ease;
+    }
+
+    .stat:hover {
+      box-shadow: 0 0 25px var(--glow);
+      transform: scale(1.05);
+    }
+
+    .stat-value {
+      font-family: 'Orbitron', monospace;
+      font-size: 1.8rem;
+      font-weight: bold;
+      color: var(--accent);
+      text-shadow: 0 0 15px var(--glow);
+      margin-bottom: 0.5rem;
+    }
+
+    h2 {
+      font-family: 'Orbitron', monospace;
+      font-size: 2rem;
+      color: var(--accent-secondary);
+      margin-top: 3rem;
+      margin-bottom: 1rem;
+      text-shadow: 0 0 20px var(--glow-secondary);
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    li {
+      margin: 1rem 0;
+      padding: 1rem;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      transition: all 0.3s ease;
+    }
+
+    li:hover {
+      box-shadow: 0 0 20px var(--glow);
+      transform: translateX(5px);
+    }
+
+    a {
+      color: var(--accent-secondary);
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.3s ease;
+    }
+
+    a:hover {
+      color: var(--accent);
+      text-shadow: 0 0 10px var(--glow);
+    }
+
+    footer {
+      margin-top: 4rem;
+      color: var(--dim);
+      font-size: 0.9rem;
+      text-align: center;
+      border-top: 1px solid var(--border);
+      padding-top: 2rem;
+    }
+
+    /* Background Animation */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at 20% 80%, rgba(0, 255, 136, 0.1) 0%, transparent 50%),
+                  radial-gradient(circle at 80% 20%, rgba(0, 212, 255, 0.1) 0%, transparent 50%),
+                  radial-gradient(circle at 40% 40%, rgba(255, 0, 128, 0.05) 0%, transparent 50%);
+      z-index: -1;
+      animation: backgroundShift 10s ease-in-out infinite alternate;
+    }
+
+    @keyframes backgroundShift {
+      0% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      h1 { font-size: 2.5rem; }
+      .container { padding: 1rem; }
+      .stats { grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
 <body>
-  Redirecting to Project Heliosphere repository...
+  <div id="loading">
+    <div class="loading-text">INITIALIZING HELIOSPHERE</div>
+    <div class="loading-bar">
+      <div class="loading-progress"></div>
+    </div>
+  </div>
+
+  <div class="container">
+    <h1>Project Heliosphere</h1>
+    <div class="subtitle">Energy for all, controlled by none.</div>
+
+    <p>
+      An open, betrayal-proof architecture for space-based solar power—designed as a
+      <strong>commons</strong>, not a commodity. Harnessing the infinite energy of the sun from orbit.
+    </p>
+
+    <div class="principle">
+      <strong>Anti-Betrayal by Design</strong><br>
+      No backdoors. No remote kill switches. No surveillance. Beams carry only pure energy.
+    </div>
+
+    <div class="principle">
+      <strong>Energy as a Commons</strong><br>
+      Access is a fundamental right—not a service. No metering. No billing. No permission required.
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-value">$0.022/kWh</div>
+        <div>Levelized Cost</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">0.141 mW/m²</div>
+        <div>Beam Safety</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">95%</div>
+        <div>Grid Utilization</div>
+      </div>
+    </div>
+
+    <h2>Engage the Network</h2>
+    <ul>
+      <li>📘 <a href="https://github.com/iamGodofall/heliosphere">Explore the Complete Specification</a></li>
+      <li>💻 <a href="https://github.com/iamGodofall/heliosphere/tree/main/firmware">Execute Firmware Simulations</a></li>
+      <li>📐 <a href="https://github.com/iamGodofall/heliosphere/tree/main/specs">Analyze Technical Specifications (ISH, MOR, GRN)</a></li>
+      <li>📜 <a href="https://github.com/iamGodofall/heliosphere/blob/main/governance/commons_charter.md">Review the Commons Charter</a></li>
+    </ul>
+
+    <footer>
+      <p>
+        Founded on the <a href="https://www.unoosa.org/oosa/en/ourwork/spacelaw/treaties/introouterspacetreaty.html">Outer Space Treaty</a>.<br>
+        All code and designs are liberated under <a href="https://www.ohwr.org/project/cernohl/wikis/Documents/CERN-OHL-version-2">CERN-OHL-W v2</a> and <a href="https://www.gnu.org/licenses/agpl-3.0.html">AGPL-3.0+</a>.
+      </p>
+    </footer>
+  </div>
+
+  <script>
+    // Hide loading screen after animation
+    setTimeout(() => {
+      document.getElementById('loading').classList.add('hidden');
+    }, 3500);
+  </script>
 </body>
 </html>
