@@ -5,205 +5,230 @@ pragma solidity ^0.8.19;
  * Beam Authorization Smart Contract for Heliosphere
  *
  * Manages cryptographic beam authorization between MOR and GRN nodes.
- * Implements 2-of-3 consent requirement for beam activation.
+ * Implements 2-of-3 consent: GRN + MOR + DAO Council.
  *
- * Deployed on Ethereum L2 (e.g., OP Stack) or Celestia DA for low-cost verification.
+ * Architecture:
+ * - On-chain: Registration, session initiation, emergency deactivation
+ * - Off-chain: Real-time heartbeat verification (handled by MOR firmware)
+ *
+ * Deployed on Ethereum L2 (OP Stack) or Celestia DA for low-cost verification.
  */
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/Ownable2Step.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-contract BeamAuth is Ownable {
+contract BeamAuth is Ownable2Step {
     using ECDSA for bytes32;
+    using EnumerableSet for EnumerableSet.AddressSet;
 
+    // ===== STRUCTS =====
     struct Node {
-        address pubkey;
         uint256 registeredAt;
         bool isActive;
         uint8 nodeType; // 0: GRN, 1: MOR, 2: DAO
+        uint256 areaM2; // Physical area in square meters
     }
 
     struct BeamSession {
-        bytes32 sessionId;
         address grnId;
         address morId;
         uint256 startedAt;
-        uint256 lastHeartbeat;
         bool isActive;
-        uint256 powerAllocated; // in watts
+        uint256 powerAllocatedW; // Allocated power in watts
     }
 
+    // ===== STORAGE =====
     mapping(address => Node) public nodes;
     mapping(bytes32 => BeamSession) public sessions;
     mapping(address => bytes32) public activeSessions; // GRN -> sessionId
 
-    uint256 public constant HEARTBEAT_TIMEOUT = 100; // 100 seconds
-    uint256 public constant MAX_POWER_DENSITY = 1000; // 1 kW/m²
+    // DAO Council Management
+    EnumerableSet.AddressSet private _daoCouncil;
+    uint256 public constant MIN_DAO_SIGNATURES = 2;
 
-    event NodeRegistered(address indexed nodeId, uint8 nodeType);
-    event BeamActivated(bytes32 indexed sessionId, address grnId, address morId);
+    // Safety Limits
+    uint256 public constant MAX_POWER_DENSITY_WPM2 = 1000; // 1 kW/m²
+
+    // ===== EVENTS =====
+    event NodeRegistered(address indexed nodeId, uint8 nodeType, uint256 areaM2);
+    event BeamSessionInitiated(bytes32 indexed sessionId, address grnId, address morId);
+    event BeamAuthorized(bytes32 indexed sessionId);
     event BeamDeactivated(bytes32 indexed sessionId, string reason);
-    event HeartbeatReceived(bytes32 indexed sessionId);
+    event DAOCouncilUpdated(address indexed member, bool isAdded);
 
-    modifier onlyRegisteredNode() {
-        require(nodes[msg.sender].isActive, "Node not registered");
+    // ===== MODIFIERS =====
+    modifier onlyActiveNode() {
+        require(nodes[msg.sender].isActive, "BeamAuth: Node not registered");
+        _;
+    }
+
+    modifier onlyGRN() {
+        require(nodes[msg.sender].nodeType == 0, "BeamAuth: Caller not GRN");
         _;
     }
 
     modifier onlyMOR() {
-        require(nodes[msg.sender].nodeType == 1, "Only MOR nodes allowed");
+        require(nodes[msg.sender].nodeType == 1, "BeamAuth: Caller not MOR");
         _;
     }
 
-    modifier onlyDAO() {
-        require(nodes[msg.sender].nodeType == 2, "Only DAO nodes allowed");
-        _;
+    // ===== DAO COUNCIL MANAGEMENT =====
+    function addToDAOCouncil(address member) external onlyOwner {
+        require(member != address(0), "BeamAuth: Invalid address");
+        require(_daoCouncil.add(member), "BeamAuth: Already in council");
+        emit DAOCouncilUpdated(member, true);
     }
 
-    /**
-     * Register a new node (GRN, MOR, or DAO)
-     */
-    function registerNode(address nodeId, uint8 nodeType) external onlyOwner {
-        require(nodeType <= 2, "Invalid node type");
-        require(!nodes[nodeId].isActive, "Node already registered");
+    function removeFromDAOCouncil(address member) external onlyOwner {
+        require(_daoCouncil.remove(member), "BeamAuth: Not in council");
+        emit DAOCouncilUpdated(member, false);
+    }
+
+    function getDAOCouncilSize() external view returns (uint256) {
+        return _daoCouncil.length();
+    }
+
+    function isDAOMember(address account) external view returns (bool) {
+        return _daoCouncil.contains(account);
+    }
+
+    // ===== NODE REGISTRATION =====
+    function registerNode(
+        address nodeId,
+        uint8 nodeType,
+        uint256 areaM2
+    ) external onlyOwner {
+        require(nodeType <= 2, "BeamAuth: Invalid node type");
+        require(areaM2 > 0, "BeamAuth: Area must be positive");
+        require(!nodes[nodeId].isActive, "BeamAuth: Node already registered");
 
         nodes[nodeId] = Node({
-            pubkey: nodeId,
             registeredAt: block.timestamp,
             isActive: true,
-            nodeType: nodeType
+            nodeType: nodeType,
+            areaM2: areaM2
         });
 
-        emit NodeRegistered(nodeId, nodeType);
+        emit NodeRegistered(nodeId, nodeType, areaM2);
     }
 
-    /**
-     * Initiate beam authorization (Step 1: GRN broadcasts beacon)
-     */
-    function initiateBeamAuth(
+    // ===== BEAM SESSION INITIATION (GRN → MOR) =====
+    function initiateBeamSession(
         address grnId,
-        bytes memory signature,
-        uint256 timestamp,
-        uint256 requestedPower
-    ) external onlyRegisteredNode returns (bytes32) {
-        require(nodes[grnId].nodeType == 0, "Must be GRN node");
-        require(requestedPower <= MAX_POWER_DENSITY * 1000000, "Power exceeds safety limit"); // Assume 1 km² area
+        uint256 requestedPowerW,
+        bytes memory signature
+    ) external onlyMOR returns (bytes32 sessionId) {
+        // Validate GRN
+        require(nodes[grnId].isActive && nodes[grnId].nodeType == 0, "BeamAuth: Invalid GRN");
 
-        // Verify signature
-        bytes32 messageHash = keccak256(abi.encodePacked(grnId, timestamp));
-        address recoveredSigner = messageHash.toEthSignedMessageHash().recover(signature);
-        require(recoveredSigner == grnId, "Invalid signature");
+        // Validate power density
+        uint256 powerDensity = requestedPowerW / nodes[grnId].areaM2;
+        require(powerDensity <= MAX_POWER_DENSITY_WPM2, "BeamAuth: Power density exceeds safety limit");
 
-        // Create session ID
-        bytes32 sessionId = keccak256(abi.encodePacked(grnId, msg.sender, block.timestamp));
+        // Verify GRN signature (raw signing - matches firmware)
+        bytes32 messageHash = keccak256(abi.encodePacked(grnId, requestedPowerW, block.timestamp));
+        address recoveredSigner = ECDSA.recover(messageHash, signature);
+        require(recoveredSigner == grnId, "BeamAuth: Invalid signature");
 
+        // Create session
+        sessionId = keccak256(abi.encodePacked(grnId, msg.sender, block.timestamp));
         sessions[sessionId] = BeamSession({
-            sessionId: sessionId,
             grnId: grnId,
             morId: msg.sender,
             startedAt: block.timestamp,
-            lastHeartbeat: block.timestamp,
-            isActive: false, // Not yet activated
-            powerAllocated: requestedPower
+            isActive: false,
+            powerAllocatedW: requestedPowerW
         });
 
+        emit BeamSessionInitiated(sessionId, grnId, msg.sender);
         return sessionId;
     }
 
-    /**
-     * Complete beam authorization (Step 2-3: MOR + DAO approve)
-     */
-    function authorizeBeam(bytes32 sessionId, bytes memory morSig, bytes memory daoSig) external onlyDAO {
+    // ===== BEAM AUTHORIZATION (2-of-3 CONSENT) =====
+    function authorizeBeam(
+        bytes32 sessionId,
+        bytes memory morSignature,
+        bytes[] memory daoSignatures
+    ) external {
         BeamSession storage session = sessions[sessionId];
-        require(!session.isActive, "Session already active");
-        require(block.timestamp - session.startedAt < 300, "Auth request expired"); // 5 min timeout
+        require(!session.isActive, "BeamAuth: Session already active");
+        require(block.timestamp - session.startedAt <= 300, "BeamAuth: Session expired"); // 5 min
 
         // Verify MOR signature
         bytes32 authHash = keccak256(abi.encodePacked(sessionId, "authorize"));
-        address morSigner = authHash.toEthSignedMessageHash().recover(morSig);
-        require(morSigner == session.morId, "Invalid MOR signature");
+        address morSigner = ECDSA.recover(authHash, morSignature);
+        require(morSigner == session.morId, "BeamAuth: Invalid MOR signature");
 
-        // Verify DAO signature (this contract's owner or designated DAO)
-        address daoSigner = authHash.toEthSignedMessageHash().recover(daoSig);
-        require(daoSigner == owner(), "Invalid DAO signature");
+        // Verify DAO signatures (2-of-council)
+        require(daoSignatures.length >= MIN_DAO_SIGNATURES, "BeamAuth: Insufficient DAO signatures");
+        
+        uint256 validSignatures;
+        mapping(address => bool) signed;
+        
+        for (uint256 i = 0; i < daoSignatures.length; i++) {
+            address daoSigner = ECDSA.recover(authHash, daoSignatures[i]);
+            if (_daoCouncil.contains(daoSigner) && !signed[daoSigner]) {
+                signed[daoSigner] = true;
+                validSignatures++;
+            }
+        }
+        
+        require(validSignatures >= MIN_DAO_SIGNATURES, "BeamAuth: Insufficient valid DAO signatures");
 
-        // Activate beam
+        // Activate session
         session.isActive = true;
         activeSessions[session.grnId] = sessionId;
-
-        emit BeamActivated(sessionId, session.grnId, session.morId);
+        emit BeamAuthorized(sessionId);
     }
 
-    /**
-     * Send heartbeat to maintain beam (GRN calls this every 50ms)
-     */
-    function sendHeartbeat(bytes32 sessionId) external {
+    // ===== EMERGENCY DEACTIVATION =====
+    function emergencyDeactivate(
+        bytes32 sessionId,
+        string memory reason
+    ) external onlyActiveNode {
         BeamSession storage session = sessions[sessionId];
-        require(session.isActive, "Session not active");
-        require(msg.sender == session.grnId, "Only GRN can send heartbeat");
-
-        session.lastHeartbeat = block.timestamp;
-        emit HeartbeatReceived(sessionId);
-    }
-
-    /**
-     * Check if beam should be deactivated (MOR calls this periodically)
-     */
-    function checkBeamStatus(bytes32 sessionId) external view returns (bool shouldDeactivate, string memory reason) {
-        BeamSession memory session = sessions[sessionId];
-        if (!session.isActive) {
-            return (false, "Session not active");
-        }
-
-        if (block.timestamp - session.lastHeartbeat > HEARTBEAT_TIMEOUT) {
-            return (true, "Heartbeat timeout");
-        }
-
-        // Additional safety checks could be added here
-        // e.g., verify power density, atmospheric conditions, etc.
-
-        return (false, "");
-    }
-
-    /**
-     * Emergency beam deactivation (any registered node can call)
-     */
-    function emergencyDeactivate(bytes32 sessionId, string memory reason) external onlyRegisteredNode {
-        BeamSession storage session = sessions[sessionId];
-        require(session.isActive, "Session not active");
+        require(session.isActive, "BeamAuth: Session not active");
 
         session.isActive = false;
         delete activeSessions[session.grnId];
-
         emit BeamDeactivated(sessionId, reason);
     }
 
-    /**
-     * Get active session for a GRN
-     */
+    // ===== READ FUNCTIONS =====
     function getActiveSession(address grnId) external view returns (bytes32) {
         return activeSessions[grnId];
     }
 
-    /**
-     * Get session details
-     */
-    function getSession(bytes32 sessionId) external view returns (
+    function getSessionDetails(bytes32 sessionId) external view returns (
         address grnId,
         address morId,
         uint256 startedAt,
-        uint256 lastHeartbeat,
         bool isActive,
-        uint256 powerAllocated
+        uint256 powerAllocatedW
     ) {
         BeamSession memory session = sessions[sessionId];
         return (
             session.grnId,
             session.morId,
             session.startedAt,
-            session.lastHeartbeat,
             session.isActive,
-            session.powerAllocated
+            session.powerAllocatedW
+        );
+    }
+
+    function getNodeDetails(address nodeId) external view returns (
+        uint256 registeredAt,
+        bool isActive,
+        uint8 nodeType,
+        uint256 areaM2
+    ) {
+        Node memory node = nodes[nodeId];
+        return (
+            node.registeredAt,
+            node.isActive,
+            node.nodeType,
+            node.areaM2
         );
     }
 }
