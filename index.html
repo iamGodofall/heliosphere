@@ -4,316 +4,540 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Project Heliosphere: Open Energy Commons</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap');
-
     :root {
-      --bg: #0a0a0f;
-      --bg-secondary: #1a1a2e;
+      --bg: #030308;
+      --bg-deep: #000000;
       --fg: #e0e0ff;
-      --accent: #00ff88;
+      --accent: #00ff9d;
       --accent-secondary: #00d4ff;
-      --dim: #64748b;
-      --glow: rgba(0, 255, 136, 0.5);
-      --glow-secondary: rgba(0, 212, 255, 0.5);
-      --border: rgba(0, 255, 136, 0.3);
-      font-family: 'Rajdhani', sans-serif;
+      --energy-glow: rgba(0, 255, 157, 0.25);
+      --orbit-line: rgba(0, 212, 255, 0.25);
+      --card-bg: rgba(10, 10, 20, 0.85);
     }
 
     * {
+      margin: 0;
+      padding: 0;
       box-sizing: border-box;
     }
 
     body {
-      background: var(--bg);
+      background: var(--bg-deep);
       color: var(--fg);
+      font-family: 'IBM Plex Mono', monospace;
       line-height: 1.6;
-      margin: 0;
-      padding: 0;
       overflow-x: hidden;
-      font-family: 'Rajdhani', sans-serif;
+      position: relative;
     }
 
-    /* Loading Screen */
-    #loading {
+    /* Top Status Bar */
+    .status-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      color: var(--accent);
+      font-size: 0.875rem;
+      padding: 6px 24px;
+      z-index: 100;
+      border-bottom: 1px solid var(--accent);
+      -webkit-backdrop-filter: blur(4px);
+      backdrop-filter: blur(4px);
+    }
+
+    /* Starfield */
+    .starfield {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: var(--bg);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-      transition: opacity 1s ease-out;
+      z-index: -2;
     }
 
-    #loading.hidden {
-      opacity: 0;
-      pointer-events: none;
+    .star {
+      position: absolute;
+      background: white;
+      border-radius: 50%;
     }
 
-    .loading-text {
-      font-family: 'Orbitron', monospace;
-      font-size: 2rem;
-      color: var(--accent);
-      text-shadow: 0 0 20px var(--glow);
-      animation: pulse 2s infinite;
-    }
-
-    .loading-bar {
-      width: 200px;
-      height: 4px;
-      background: var(--bg-secondary);
-      margin-top: 20px;
-      border-radius: 2px;
+    /* Orbital System */
+    .system {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
       overflow: hidden;
     }
 
-    .loading-progress {
-      height: 100%;
-      background: linear-gradient(90deg, var(--accent), var(--accent-secondary));
-      width: 0%;
-      animation: load 3s ease-out forwards;
+    .sun {
+      position: absolute;
+      top: 20%;
+      left: 10%;
+      width: 80px;
+      height: 80px;
+      background: radial-gradient(circle, #ffd700, #ff8c00, #ff4500);
+      border-radius: 50%;
+      box-shadow: 0 0 80px #ff4500, 0 0 120px #ff8c00;
+      animation: pulseSun 8s infinite alternate;
     }
 
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
+    .earth {
+      position: absolute;
+      top: 50%;
+      right: 15%;
+      width: 40px;
+      height: 40px;
+      background: radial-gradient(circle, #1e88e5, #0d47a1);
+      border-radius: 50%;
+      box-shadow: 0 0 30px #1e88e5;
     }
 
-    @keyframes load {
-      0% { width: 0%; }
-      100% { width: 100%; }
+    .ish-orbit-path {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 500px;
+      height: 500px;
+      border: 1px solid transparent;
+      border-radius: 50%;
+      cursor: grab;
     }
 
-    /* Main Content */
-    .container {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 2rem 1.5rem;
+    .ish {
+      position: absolute;
+      top: 10%;
+      left: 50%;
+      width: 12px;
+      height: 12px;
+      background: var(--accent);
+      border-radius: 50%;
+      transform: translateX(-50%);
+      box-shadow: 0 0 10px var(--accent);
+    }
+
+    .beam-path {
+      position: absolute;
+      top: 15%;
+      left: 12%;
+      width: 2px;
+      height: 0;
+      background: linear-gradient(to bottom, var(--accent), transparent);
+      transform-origin: top;
+      transform: rotate(30deg);
+      opacity: 0.7;
+      animation: beamPulse 3s infinite alternate;
+    }
+
+    /* Energy Wave */
+    .energy-wave {
+      position: absolute;
+      top: 25%;
+      left: 15%;
+      width: 4px;
+      height: 0;
+      background: var(--accent);
+      border-radius: 2px;
       opacity: 0;
-      animation: fadeIn 1s ease-out 3.5s forwards;
+      z-index: -1;
     }
 
-    @keyframes fadeIn {
-      to { opacity: 1; }
+    @keyframes pulseSun {
+      0% { box-shadow: 0 0 80px #ff4500, 0 0 120px #ff8c00; }
+      100% { box-shadow: 0 0 100px #ff4500, 0 0 150px #ff8c00, 0 0 200px #ffd700; }
+    }
+
+    @keyframes beamPulse {
+      0% { height: 0; opacity: 0.3; }
+      100% { height: 400px; opacity: 0.8; }
+    }
+
+    /* Content */
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 120px 24px 80px;
+      position: relative;
+      z-index: 2;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 64px;
     }
 
     h1 {
-      font-family: 'Orbitron', monospace;
-      font-size: 3rem;
-      margin-bottom: 0.5rem;
-      background: linear-gradient(45deg, var(--accent), var(--accent-secondary), #ff0080);
+      font-family: 'Space Grotesk', monospace;
+      font-weight: 700;
+      font-size: 4rem;
+      letter-spacing: -0.03em;
+      background: linear-gradient(90deg, var(--accent), var(--accent-secondary));
       -webkit-background-clip: text;
       background-clip: text;
       color: transparent;
-      text-shadow: 0 0 30px var(--glow);
-      animation: glow 2s ease-in-out infinite alternate;
-    }
-
-    @keyframes glow {
-      from { text-shadow: 0 0 30px var(--glow); }
-      to { text-shadow: 0 0 40px var(--glow), 0 0 50px var(--glow-secondary); }
+      margin-bottom: 16px;
+      text-shadow: 0 0 30px var(--energy-glow);
     }
 
     .subtitle {
+      font-size: 1.5rem;
       color: var(--accent-secondary);
-      font-size: 1.2rem;
-      margin-bottom: 2rem;
       font-style: italic;
-      text-shadow: 0 0 10px var(--glow-secondary);
+      margin-bottom: 32px;
+      text-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
     }
 
-    p {
-      font-size: 1.1rem;
-      margin-bottom: 2rem;
+    .hero-text {
+      font-size: 1.25rem;
+      max-width: 720px;
+      margin: 0 auto 48px;
+      line-height: 1.7;
     }
 
-    .principle {
-      background: linear-gradient(135deg, rgba(26, 26, 46, 0.8), rgba(10, 10, 15, 0.9));
-      border: 1px solid var(--border);
-      border-left: 4px solid var(--accent);
-      padding: 1.5rem;
-      margin: 2rem 0;
-      border-radius: 8px;
-      box-shadow: 0 0 20px rgba(0, 255, 136, 0.1);
-      transition: all 0.3s ease;
+    /* Live Telemetry */
+    .telemetry {
+      background: var(--card-bg);
+      border-radius: 20px;
+      padding: 32px;
+      margin: 64px 0;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.4s ease;
     }
 
-    .principle:hover {
-      box-shadow: 0 0 30px var(--glow);
-      transform: translateY(-2px);
+    .telemetry::before {
+      content: '';
+      position: absolute;
+      top: -2px;
+      left: -2px;
+      right: -2px;
+      bottom: -2px;
+      background: linear-gradient(45deg, var(--accent), var(--accent-secondary), var(--accent));
+      background-size: 400% 400%;
+      border-radius: 22px;
+      z-index: -1;
+      animation: borderGlow 3s ease infinite;
+      opacity: 0.7;
     }
 
-    .principle strong {
+    @keyframes borderGlow {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .telemetry-title {
+      font-family: 'Space Grotesk', monospace;
+      font-size: 1.5rem;
       color: var(--accent);
-      font-size: 1.2rem;
-      display: block;
-      margin-bottom: 0.5rem;
-    }
-
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 1.5rem;
-      margin: 3rem 0;
-    }
-
-    .stat {
-      background: var(--bg-secondary);
-      border: 1px solid var(--border);
-      padding: 1.5rem;
+      margin-bottom: 24px;
       text-align: center;
-      border-radius: 8px;
-      box-shadow: 0 0 15px rgba(0, 255, 136, 0.1);
-      transition: all 0.3s ease;
+      display: block;
     }
 
-    .stat:hover {
-      box-shadow: 0 0 25px var(--glow);
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 24px;
+    }
+
+    .metric {
+      text-align: center;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+
+    .metric:hover {
       transform: scale(1.05);
     }
 
-    .stat-value {
-      font-family: 'Orbitron', monospace;
-      font-size: 1.8rem;
-      font-weight: bold;
+    .metric-value {
+      font-family: 'Space Grotesk', monospace;
+      font-size: 2.5rem;
+      font-weight: 700;
       color: var(--accent);
-      text-shadow: 0 0 15px var(--glow);
-      margin-bottom: 0.5rem;
+      margin-bottom: 8px;
     }
 
-    h2 {
-      font-family: 'Orbitron', monospace;
-      font-size: 2rem;
-      color: var(--accent-secondary);
-      margin-top: 3rem;
-      margin-bottom: 1rem;
-      text-shadow: 0 0 20px var(--glow-secondary);
+    .metric-label {
+      color: var(--fg);
+      font-size: 1rem;
     }
 
-    ul {
-      list-style: none;
-      padding: 0;
+    /* Beam Control */
+    .beam-control {
+      text-align: center;
+      margin: 40px 0;
     }
 
-    li {
-      margin: 1rem 0;
-      padding: 1rem;
-      background: var(--bg-secondary);
-      border: 1px solid var(--border);
-      border-radius: 6px;
+    .beam-btn {
+      background: rgba(0, 255, 157, 0.1);
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      padding: 12px 32px;
+      font-family: 'Space Grotesk', monospace;
+      font-size: 1.1rem;
+      border-radius: 30px;
+      cursor: pointer;
       transition: all 0.3s ease;
     }
 
-    li:hover {
-      box-shadow: 0 0 20px var(--glow);
-      transform: translateX(5px);
+    .beam-btn:hover {
+      background: rgba(0, 255, 157, 0.3);
+      box-shadow: 0 0 20px var(--energy-glow);
     }
 
-    a {
-      color: var(--accent-secondary);
-      text-decoration: none;
-      font-weight: 600;
-      transition: color 0.3s ease;
-    }
-
-    a:hover {
-      color: var(--accent);
-      text-shadow: 0 0 10px var(--glow);
-    }
-
-    footer {
-      margin-top: 4rem;
-      color: var(--dim);
+    .heartbeat-status {
+      margin-top: 16px;
       font-size: 0.9rem;
-      text-align: center;
-      border-top: 1px solid var(--border);
-      padding-top: 2rem;
+      color: var(--fg-muted);
     }
 
-    /* Background Animation */
-    body::before {
+    /* Principles */
+    .principles {
+      display: grid;
+      gap: 24px;
+      margin: 64px 0;
+    }
+
+    .principle-card {
+      background: var(--card-bg);
+      border: 1px solid var(--orbit-line);
+      border-radius: 16px;
+      padding: 28px;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .principle-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-4px);
+      box-shadow: 0 10px 30px var(--energy-glow);
+    }
+
+    .principle-card::before {
       content: '';
-      position: fixed;
+      position: absolute;
       top: 0;
       left: 0;
-      width: 100%;
+      width: 4px;
       height: 100%;
-      background: radial-gradient(circle at 20% 80%, rgba(0, 255, 136, 0.1) 0%, transparent 50%),
-                  radial-gradient(circle at 80% 20%, rgba(0, 212, 255, 0.1) 0%, transparent 50%),
-                  radial-gradient(circle at 40% 40%, rgba(255, 0, 128, 0.05) 0%, transparent 50%);
-      z-index: -1;
-      animation: backgroundShift 10s ease-in-out infinite alternate;
+      background: var(--accent);
     }
 
-    @keyframes backgroundShift {
-      0% { opacity: 0.5; }
-      100% { opacity: 1; }
+    .principle-title {
+      font-family: 'Space Grotesk', monospace;
+      font-size: 1.4rem;
+      color: var(--accent);
+      margin-bottom: 16px;
+    }
+
+    /* Get Involved */
+    .get-involved h2 {
+      font-family: 'Space Grotesk', monospace;
+      font-size: 2.25rem;
+      text-align: center;
+      margin: 80px 0 48px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-secondary));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .links-grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .link-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 20px 24px;
+      background: var(--card-bg);
+      border: 1px solid var(--orbit-line);
+      border-radius: 12px;
+      color: var(--fg);
+      text-decoration: none;
+      transition: all 0.3s ease;
+    }
+
+    .link-item:hover {
+      border-color: var(--accent);
+      transform: translateX(8px);
+      box-shadow: 0 0 20px var(--energy-glow);
+    }
+
+    .link-icon {
+      font-size: 1.8rem;
+      background: rgba(0, 255, 157, 0.1);
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      color: var(--accent);
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      padding: 64px 0 40px;
+      color: var(--fg);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--orbit-line);
+      margin-top: 40px;
+    }
+
+    footer a {
+      color: var(--accent-secondary);
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      color: var(--accent);
+      text-shadow: 0 0 10px var(--energy-glow);
     }
 
     /* Responsive */
     @media (max-width: 768px) {
-      h1 { font-size: 2.5rem; }
-      .container { padding: 1rem; }
-      .stats { grid-template-columns: 1fr; }
+      .container {
+        padding: 80px 16px 60px;
+      }
+      
+      h1 {
+        font-size: 2.8rem;
+      }
+      
+      .subtitle {
+        font-size: 1.25rem;
+      }
+      
+      .hero-text {
+        font-size: 1.1rem;
+      }
+      
+      .telemetry-title {
+        font-size: 1.25rem;
+      }
+      
+      .metric-value {
+        font-size: 2rem;
+      }
     }
   </style>
 </head>
 <body>
-  <div id="loading">
-    <div class="loading-text">INITIALIZING HELIOSPHERE</div>
-    <div class="loading-bar">
-      <div class="loading-progress"></div>
+  <!-- Top Status Bar -->
+  <div class="status-bar">
+    🔋 ISH ONLINE • 📡 BEAM INACTIVE • 💚 AWAITING AUTHORIZATION
+  </div>
+
+  <!-- Starfield -->
+  <div class="starfield" id="starfield"></div>
+
+  <!-- Orbital System -->
+  <div class="system">
+    <div class="sun"></div>
+    <div class="earth"></div>
+    <div class="ish-orbit-path" id="orbit">
+      <div class="ish" id="ish"></div>
     </div>
+    <div class="beam-path" id="beam"></div>
+    <div class="energy-wave" id="energyWave"></div>
   </div>
 
   <div class="container">
-    <h1>Project Heliosphere</h1>
-    <div class="subtitle">Energy for all, controlled by none.</div>
+    <header>
+      <h1>Project Heliosphere</h1>
+      <div class="subtitle">Energy for all, controlled by none.</div>
+    </header>
 
-    <p>
-      An open, betrayal-proof architecture for space-based solar power—designed as a
+    <p class="hero-text">
+      An open, betrayal-proof architecture for space-based solar power—designed as a 
       <strong>commons</strong>, not a commodity. Harnessing the infinite energy of the sun from orbit.
     </p>
 
-    <div class="principle">
-      <strong>Anti-Betrayal by Design</strong><br>
-      No backdoors. No remote kill switches. No surveillance. Beams carry only pure energy.
+    <!-- Beam Control -->
+    <div class="beam-control">
+      <button class="beam-btn" id="activateBeam">⚡ Activate Beam Authorization</button>
+      <div class="heartbeat-status" id="heartbeatStatus">Awaiting activation...</div>
     </div>
 
-    <div class="principle">
-      <strong>Energy as a Commons</strong><br>
-      Access is a fundamental right—not a service. No metering. No billing. No permission required.
+    <!-- Live Telemetry -->
+    <div class="telemetry" id="telemetry">
+      <div class="telemetry-title">⚡ Live System Status</div>
+      <div class="metrics">
+        <div class="metric" data-type="cost">
+          <div class="metric-value">$0.022</div>
+          <div class="metric-label">per kWh</div>
+        </div>
+        <div class="metric" data-type="safety">
+          <div class="metric-value">0.141</div>
+          <div class="metric-label">mW/m²</div>
+        </div>
+        <div class="metric" data-type="util">
+          <div class="metric-value">95%</div>
+          <div class="metric-label">Grid Utilization</div>
+        </div>
+        <div class="metric" data-type="fuel">
+          <div class="metric-value">∞</div>
+          <div class="metric-label">Fuel Supply</div>
+        </div>
+      </div>
     </div>
 
-    <div class="stats">
-      <div class="stat">
-        <div class="stat-value">$0.022/kWh</div>
-        <div>Levelized Cost</div>
+    <!-- Principles -->
+    <section class="principles">
+      <div class="principle-card">
+        <div class="principle-title">ANTI-BETRAYAL BY DESIGN</div>
+        <p>No backdoors. No remote kill switches. No surveillance. Beams carry only pure energy. Not even the builder can override the heartbeat protocol.</p>
       </div>
-      <div class="stat">
-        <div class="stat-value">0.141 mW/m²</div>
-        <div>Beam Safety</div>
+      <div class="principle-card">
+        <div class="principle-title">ENERGY AS A COMMONS</div>
+        <p>Access is a fundamental right—not a service. No metering. No billing. No permission required. Governed by communities, not corporations.</p>
       </div>
-      <div class="stat">
-        <div class="stat-value">95%</div>
-        <div>Grid Utilization</div>
-      </div>
-    </div>
+    </section>
 
-    <h2>Engage the Network</h2>
-    <ul>
-      <li>📘 <a href="https://github.com/iamGodofall/heliosphere">Explore the Complete Specification</a></li>
-      <li>🚀 <a href="https://github.com/iamGodofall/heliosphere/tree/main/sim">Run System Simulations (Beam Routing & Trace)</a></li>
-      <li>💻 <a href="https://github.com/iamGodofall/heliosphere/tree/main/firmware">Execute Firmware Simulations</a></li>
-      <li>📐 <a href="https://github.com/iamGodofall/heliosphere/tree/main/specs">Analyze Technical Specifications (ISH, MOR, GRN)</a></li>
-      <li>📜 <a href="https://github.com/iamGodofall/heliosphere/blob/main/governance/charter.md">Review the Commons Charter</a></li>
-      <li>🎮 <a href="https://github.com/iamGodofall/heliosphere/blob/main/demo_beam_auth.py">Experience the Full Demo</a></li>
-    </ul>
+    <!-- Get Involved -->
+    <section class="get-involved">
+      <h2>Engage the Network</h2>
+      <div class="links-grid">
+        <a href="https://github.com/iamGodofall/heliosphere" class="link-item">
+          <div class="link-icon">📘</div>
+          <span>Explore the Complete Specification</span>
+        </a>
+        <a href="https://github.com/iamGodofall/heliosphere/tree/main/sim" class="link-item">
+          <div class="link-icon">🚀</div>
+          <span>Run System Simulations (Beam Routing & Trace)</span>
+        </a>
+        <a href="https://github.com/iamGodofall/heliosphere/tree/main/firmware" class="link-item">
+          <div class="link-icon">💻</div>
+          <span>Execute Firmware Simulations</span>
+        </a>
+        <a href="https://github.com/iamGodofall/heliosphere/tree/main/specs" class="link-item">
+          <div class="link-icon">📐</div>
+          <span>Analyze Technical Specifications (ISH, MOR, GRN)</span>
+        </a>
+        <a href="https://github.com/iamGodofall/heliosphere/blob/main/governance/commons_charter.md" class="link-item">
+          <div class="link-icon">📜</div>
+          <span>Review the Commons Charter</span>
+        </a>
+        <a href="https://github.com/iamGodofall/heliosphere/blob/main/demo_beam_auth.py" class="link-item">
+          <div class="link-icon">🎮</div>
+          <span>Experience the Full Demo</span>
+        </a>
+      </div>
+    </section>
 
     <footer>
       <p>
@@ -324,10 +548,127 @@
   </div>
 
   <script>
-    // Hide loading screen after animation
-    setTimeout(() => {
-      document.getElementById('loading').classList.add('hidden');
-    }, 3500);
+    // Generate starfield
+    const starfield = document.getElementById('starfield');
+    for (let i = 0; i < 200; i++) {
+      const star = document.createElement('div');
+      star.classList.add('star');
+      star.style.width = `${Math.random() * 3}px`;
+      star.style.height = star.style.width;
+      star.style.left = `${Math.random() * 100}%`;
+      star.style.top = `${Math.random() * 100}%`;
+      star.style.opacity = Math.random() * 0.8 + 0.2;
+      starfield.appendChild(star);
+    }
+
+    // Make orbit draggable
+    const orbit = document.getElementById('orbit');
+    const ish = document.getElementById('ish');
+    let isDragging = false;
+    let startAngle = 0;
+
+    orbit.addEventListener('mousedown', startDrag);
+    orbit.addEventListener('touchstart', e => { e.preventDefault(); startDrag(e.touches[0]); });
+
+    function startDrag(e) {
+      isDragging = true;
+      const rect = orbit.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const startX = e.clientX || e.pageX;
+      const startY = e.clientY || e.pageY;
+      const angle = Math.atan2(startY - centerY, startX - centerX);
+      startAngle = angle;
+      document.addEventListener('mousemove', drag);
+      document.addEventListener('mouseup', stopDrag);
+      if (e.type === 'touchstart') {
+        document.addEventListener('touchmove', e => { e.preventDefault(); drag(e.touches[0]); }, { passive: false });
+        document.addEventListener('touchend', stopDrag);
+      }
+    }
+
+    function drag(e) {
+      if (!isDragging) return;
+      const rect = orbit.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const currentX = e.clientX || e.pageX;
+      const currentY = e.clientY || e.pageY;
+      const angle = Math.atan2(currentY - centerY, currentX - centerX);
+      const delta = angle - startAngle;
+      orbit.style.transform = `translate(-50%, -50%) rotate(${delta * 180 / Math.PI}deg)`;
+    }
+
+    function stopDrag() {
+      isDragging = false;
+      document.removeEventListener('mousemove', drag);
+      document.removeEventListener('mouseup', stopDrag);
+      document.removeEventListener('touchmove', drag);
+      document.removeEventListener('touchend', stopDrag);
+    }
+
+    // Beam activation
+    const activateBtn = document.getElementById('activateBeam');
+    const heartbeatStatus = document.getElementById('heartbeatStatus');
+    const statusBar = document.querySelector('.status-bar');
+    const beam = document.getElementById('beam');
+    const energyWave = document.getElementById('energyWave');
+
+    let heartbeatInterval;
+    let isBeamActive = false;
+
+    activateBtn.addEventListener('click', () => {
+      if (isBeamActive) return;
+      
+      isBeamActive = true;
+      activateBtn.textContent = "📡 Beam Active";
+      activateBtn.disabled = true;
+      statusBar.innerHTML = "🔋 ISH ONLINE • 📡 BEAM ACTIVE • 💚 95% UTILIZATION • ☢️ 0.141 mW/m²";
+      
+      // Simulate energy wave
+      simulateEnergyWave();
+      
+      // Start heartbeat
+      let beat = 1;
+      heartbeatStatus.textContent = `💓 Heartbeat ${beat} received`;
+      heartbeatInterval = setInterval(() => {
+        beat++;
+        heartbeatStatus.textContent = `💓 Heartbeat ${beat} received`;
+        if (beat % 3 === 0) {
+          beam.style.animation = 'none';
+          setTimeout(() => beam.style.animation = 'beamPulse 3s infinite alternate', 10);
+        }
+      }, 2000);
+    });
+
+    function simulateEnergyWave() {
+      energyWave.style.opacity = '1';
+      energyWave.style.height = '400px';
+      energyWave.style.transition = 'height 2s ease-out, opacity 0.5s ease';
+      
+      setTimeout(() => {
+        energyWave.style.opacity = '0';
+        setTimeout(() => {
+          energyWave.style.height = '0';
+        }, 500);
+      }, 2000);
+    }
+
+    // Metric hover effects
+    document.querySelectorAll('.metric').forEach(metric => {
+      metric.addEventListener('mouseenter', () => {
+        if (isBeamActive) {
+          simulateEnergyWave();
+        }
+      });
+    });
+
+    // Parallax on scroll
+    document.addEventListener('scroll', () => {
+      const scrollY = window.scrollY;
+      document.querySelector('.sun').style.transform = `translateY(${scrollY * 0.1}px)`;
+      document.querySelector('.earth').style.transform = `translateY(${-scrollY * 0.05}px)`;
+    });
   </script>
 </body>
 </html>
