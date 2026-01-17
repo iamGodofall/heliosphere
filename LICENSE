@@ -3,17 +3,21 @@
 This project is dual-licensed to ensure all components remain free, sovereign, and ungovernable by any single entity.
 
 ## 1. SOFTWARE AND FIRMWARE
+
 Applies to: /firmware, /sim, /scripts, Makefile, *.py, *.sh, and all executable code.
 License: GNU Affero General Public License v3.0 or later (AGPL-3.0+)
 Rationale: Ensures all networked services using this code must release source—preventing corporate enclosure.
 
 ## 2. HARDWARE, SPECIFICATIONS, AND DOCUMENTATION
+
 Applies to: /specs, /governance, /docs, *.md, diagrams, orbital models, BOMs, and physical designs.
 License: CERN Open Hardware Licence Version 2 - Weakly Reciprocal (CERN-OHL-W v2)
 Rationale: Ensures anyone building a GRN, MOR, or ISH must share improvements—preserving the energy commons.
 
 ---
+
 ## GNU AFFERO GENERAL PUBLIC LICENSE
+
 Version 3, 19 November 2007
 
 Copyright (C) 2007 Free Software Foundation, Inc. <https://fsf.org/>
@@ -249,6 +253,7 @@ If your software can interact with users remotely through a computer network, yo
 You should also get your employer (if you work as a programmer) or school, if any, to sign a "copyright disclaimer" for the program, if necessary. For more information on this, and how to apply and follow the GNU AGPL, see <https://www.gnu.org/licenses/>.
 
 ---
+
 ## CERN OPEN HARDWARE LICENCE VERSION 2 - WEAKLY RECIPROCAL
 
 Preamble
@@ -297,4 +302,4 @@ This Licence represents the complete agreement between the parties and supersede
 
 For the full text and updates, visit: https://ohwr.org/cern_ohl_w_v2.txt
 
-END OF LICENCE
+END OF LICENCE.

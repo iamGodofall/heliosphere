@@ -1,54 +1,56 @@
 #!/usr/bin/env python3
 """
-Beam Trace Simulation for Heliosphere
+Beam Trace Simulation for Heliosphere ISH
 
-Calculates beam divergence and spot size for ISH to MOR transmission.
+Calculates beam divergence, spot size, and power density for Inner Solar Harvesters.
+Validates safety against ICNIRP limits (1,000 W/m² at 5.8 GHz).
+
+Usage: python sim/beam_trace.py --ish_power 1e10 --distance 1.5e11
 """
 
 import argparse
 import math
 
-def beam_trace(ish_power, distance):
-    """
-    Simulate microwave beam propagation.
-
-    Args:
-        ish_power (float): ISH output power in watts
-        distance (float): Distance to receiver in meters
-    """
-    # Constants
-    frequency = 5.8e9  # 5.8 GHz
-    wavelength = 3e8 / frequency  # meters
-    aperture_diameter = 1000  # meters
-
-    # Beam divergence (rad)
-    theta = 1.22 * wavelength / aperture_diameter
-
-    # Spot size at distance
-    spot_diameter = theta * distance
-
-    # Power density at center (simplified, ignoring Gaussian profile)
-    area = math.pi * (spot_diameter / 2)**2
-    power_density = ish_power / area
-
-    print(f"ISH Power: {ish_power / 1e9:.1f} GW")
-    print(f"Distance: {distance / 1e11:.1f} × 10^11 m")
-    print(f"Wavelength: {wavelength:.3f} m")
-    print(f"Aperture: {aperture_diameter} m")
-    print(f"Beam divergence: {theta * 1e6:.1f} µrad ({math.degrees(theta):.4f}°)")
-    print(f"Spot diameter: {spot_diameter / 1000:.0f} km")
-    print(f"Power density: {power_density:.1f} W/m²")
-
-    # Safety check
-    if power_density > 1000:
-        print("WARNING: Power density exceeds 1 kW/m² safety limit!")
-    else:
-        print("✓ Within safety limits.")
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Beam trace simulation")
+def main():
+    parser = argparse.ArgumentParser()
     parser.add_argument("--ish_power", type=float, required=True, help="ISH power in watts")
     parser.add_argument("--distance", type=float, required=True, help="Distance in meters")
     args = parser.parse_args()
 
-    beam_trace(args.ish_power, args.distance)
+    # Constants
+    wavelength_m = 0.052  # 5.8 GHz
+    aperture_m = 1000.0   # ISH transmitter diameter
+    safety_limit_wpm2 = 1000.0  # ICNIRP limit at 5.8 GHz
+
+    # Calculations
+    power_gw = args.ish_power / 1e9
+    distance_sci = f"{args.distance:.1e}"
+    
+    # Beam divergence (radians)
+    divergence_rad = 1.22 * wavelength_m / aperture_m
+    divergence_urad = divergence_rad * 1e6
+    divergence_deg = math.degrees(divergence_rad)
+    
+    # Spot diameter
+    spot_diameter_m = divergence_rad * args.distance
+    spot_diameter_km = spot_diameter_m / 1000.0
+    
+    # Power density (W/m²)
+    spot_area_m2 = math.pi * (spot_diameter_m / 2.0)**2
+    power_density_wpm2 = args.ish_power / spot_area_m2 if spot_area_m2 > 0 else 0.0
+    
+    # Safety check
+    is_safe = power_density_wpm2 <= safety_limit_wpm2
+
+    # Output
+    print(f"ISH Power: {power_gw:.1f} GW")
+    print(f"Distance: {distance_sci} m")
+    print(f"Wavelength: {wavelength_m:.3f} m")
+    print(f"Aperture: {aperture_m:.0f} m")
+    print(f"Beam divergence: {divergence_urad:.1f} µrad ({divergence_deg:.4f}°)")
+    print(f"Spot diameter: {spot_diameter_km:.0f} km")
+    print(f"Power density: {power_density_wpm2:.6f} W/m² ({power_density_wpm2 * 1000:.3f} mW/m²)")
+    print(f"{'✓ Within safety limits.' if is_safe else '⚠️ EXCEEDS SAFETY LIMIT!'}")
+
+if __name__ == "__main__":
+    main()
