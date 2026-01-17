@@ -11,11 +11,12 @@ Usage: python sim/beam_trace.py --ish_power 1e10 --distance 1.5e11
 import argparse
 import math
 
-def main():
+def main(args=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("--ish_power", type=float, required=True, help="ISH power in watts")
     parser.add_argument("--distance", type=float, required=True, help="Distance in meters")
-    args = parser.parse_args()
+    if args is None:
+        args = parser.parse_args()
 
     # Constants
     wavelength_m = 0.052  # 5.8 GHz

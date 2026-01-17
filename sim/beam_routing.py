@@ -7,12 +7,13 @@ Guarantees >90% MOR utilization with fair distribution.
 import argparse
 import random
 
-def main():
+def main(args=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("--mor_power", type=float, required=True)
     parser.add_argument("--total_demand", type=float, required=True)
     parser.add_argument("--seed", type=int, default=None)
-    args = parser.parse_args()
+    if args is None:
+        args = parser.parse_args()
 
     if args.seed is not None:
         random.seed(args.seed)
