@@ -79,3 +79,53 @@ This document outlines key assumptions, technical dependencies, and risk factors
 - Economic viability without subsidies
 
 These assumptions will be updated as TRLs advance. All designs are modular to accommodate technology substitutions.
+
+---
+
+## Measured, 3 September 2026 — the simulator had never been run
+
+`make sim` invoked `python3 sim/beam_trace.py` with no arguments, and the script
+requires `--ish_power` and `--distance`. It exited 2 every time, and `make all`
+failed with it. Nobody had seen this simulator's output.
+
+`main(args=None)` accepted an argument list and then ignored it — the body read
+`if args is None: args = parser.parse_args()`, so a caller passing a list had
+that list bound straight to `args` and the next line died with
+`'list' object has no attribute 'ish_power'`. The signature promised
+programmatic use and could not deliver it, so no test, sweep or notebook could
+drive the model either.
+
+Both are fixed, and `make test` now runs 10 assertions against the physics.
+
+### What the simulator says about this repository's own design point
+
+Run at the figures `docs/README.md` states — 10 GW at the ISH, beamed to a
+geostationary MOR at 35,786 km:
+
+| | |
+|---|---|
+| Beam divergence | 63.4 µrad, the diffraction limit for 5.8 GHz through a 1 km aperture |
+| Spot diameter | **2.27 km** |
+| Power density | **2,470 W/m²** |
+| Verdict | **exceeds the 1,000 W/m² limit the code checks against, by 2.5×** |
+
+That is the repository's own tool applied to the repository's own numbers, and
+it is a real constraint on the architecture rather than a bug to fix: either the
+aperture grows, the power per satellite falls, or the receiving station is not a
+place people can stand.
+
+### And the safety constant itself wants checking
+
+`SAFETY_LIMIT_WPM2 = 1000.0` carries the comment "ICNIRP limit at 5.8 GHz".
+ICNIRP's published 2020 reference level for **general public** exposure at that
+frequency is substantially lower. The constant was left exactly as found and
+flagged here rather than quietly changed, because choosing an exposure limit is
+an engineering and regulatory decision, not a typo fix. If the lower figure is
+the right one, the gap above widens by orders of magnitude.
+
+### A display bug found on the way
+
+`Spot diameter: {:.0f} km` printed **"0 km"** for any spot under 500 m while the
+power density beside it was computed from the true value — a readout stating the
+beam has no width. It prints kilometres to three decimals and metres alongside
+now.
