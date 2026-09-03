@@ -1,0 +1,6 @@
+# Python bytecode. Two .pyc files were committed with the previous change;
+# they are build output and change on every run.
+__pycache__/
+*.py[cod]
+.venv/
+venv/
