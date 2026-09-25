@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Project Heliosphere: Open Energy Commons</title>
+  <title>Project Heliosphere · Technical Demonstrator & Open Energy Commons</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
@@ -439,7 +439,7 @@
 <body>
   <!-- Top Status Bar -->
   <div class="status-bar">
-    🔋 ISH ONLINE • 📡 BEAM INACTIVE • 💚 AWAITING AUTHORIZATION
+    🧪 TECHNICAL DEMONSTRATOR • 📡 SIMULATION ONLY • 💚 BEAM INACTIVE
   </div>
 
   <!-- Starfield -->
@@ -463,35 +463,35 @@
     </header>
 
     <p class="hero-text">
-      An open, betrayal-proof architecture for space-based solar power—designed as a 
+      A research architecture and technical demonstrator for space-based solar power — designed as a 
       <strong>commons</strong>, not a commodity. Harnessing the infinite energy of the sun from orbit.
     </p>
 
     <!-- Beam Control -->
     <div class="beam-control">
-      <button class="beam-btn" id="activateBeam">⚡ Activate Beam Authorization</button>
-      <div class="heartbeat-status" id="heartbeatStatus">Awaiting activation...</div>
+      <button class="beam-btn" id="activateBeam">⚡ Run Authorization Simulation</button>
+      <div class="heartbeat-status" id="heartbeatStatus">No physical beam is connected. The control below runs a local software simulation.</div>
     </div>
 
     <!-- Live Telemetry -->
     <div class="telemetry" id="telemetry">
-      <div class="telemetry-title">⚡ Live System Status</div>
+      <div class="telemetry-title">⚙️ Model & Simulation State</div>
       <div class="metrics">
         <div class="metric" data-type="cost">
-          <div class="metric-value">$0.022</div>
-          <div class="metric-label">per kWh</div>
+          <div class="metric-value">MODEL</div>
+          <div class="metric-label">Cost target is not measured here</div>
         </div>
         <div class="metric" data-type="safety">
-          <div class="metric-value">0.141</div>
-          <div class="metric-label">mW/m²</div>
+          <div class="metric-value">OFFLINE</div>
+          <div class="metric-label">No physical beam telemetry</div>
         </div>
         <div class="metric" data-type="util">
-          <div class="metric-value">95%</div>
-          <div class="metric-label">Grid Utilization</div>
+          <div class="metric-value">SIM</div>
+          <div class="metric-label">Local authorization model</div>
         </div>
         <div class="metric" data-type="fuel">
-          <div class="metric-value">∞</div>
-          <div class="metric-label">Fuel Supply</div>
+          <div class="metric-value">SOLAR</div>
+          <div class="metric-label">Design input, not live supply</div>
         </div>
       </div>
     </div>
@@ -621,19 +621,19 @@
       if (isBeamActive) return;
       
       isBeamActive = true;
-      activateBtn.textContent = "📡 Beam Active";
+      activateBtn.textContent = "📡 Simulation Active";
       activateBtn.disabled = true;
-      statusBar.innerHTML = "🔋 ISH ONLINE • 📡 BEAM ACTIVE • 💚 95% UTILIZATION • ☢️ 0.141 mW/m²";
+      statusBar.innerHTML = "🧪 DEMONSTRATOR • 📡 AUTHORIZATION SIMULATION ACTIVE • 💚 NO PHYSICAL BEAM CONNECTED";
       
       // Simulate energy wave
       simulateEnergyWave();
       
       // Start heartbeat
       let beat = 1;
-      heartbeatStatus.textContent = `💓 Heartbeat ${beat} received`;
+      heartbeatStatus.textContent = `💓 Simulated heartbeat ${beat} received`;
       heartbeatInterval = setInterval(() => {
         beat++;
-        heartbeatStatus.textContent = `💓 Heartbeat ${beat} received`;
+        heartbeatStatus.textContent = `💓 Simulated heartbeat ${beat} received`;
         if (beat % 3 === 0) {
           beam.style.animation = 'none';
           setTimeout(() => beam.style.animation = 'beamPulse 3s infinite alternate', 10);
