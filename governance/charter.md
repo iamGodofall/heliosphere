@@ -1,4 +1,4 @@
-# Commons Charter (Enforceable v1.0)
+# Commons Charter — Proposed Governance Model v1.0
 
 ## Ownership
 
